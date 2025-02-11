@@ -3,7 +3,7 @@ const c = @import("color.zig");
 const w = @import("../widgets.zig");
 const u = @import("../../utils.zig");
 
-const SIZE: u8 = 30;
+const SIZE: u16 = 30;
 
 pub const ColorPicker = struct {
     stdout: std.fs.File.Writer,
