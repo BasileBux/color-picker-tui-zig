@@ -27,19 +27,16 @@ pub const ColorPicker = struct {
         if (!self.update_flag) return;
 
         const width: f32 = @floatFromInt(self.size.x);
-        const height: f32 = @floatFromInt(self.size.y);
+        // const height: f32 = @floatFromInt(self.size.y);
 
         const red_float: f32 = @floatFromInt(self.color.r);
         const red_h_coef: f32 = ((255.0 - red_float) / width);
-        const red_v_coef: f32 = (red_float / height);
 
         const green_float: f32 = @floatFromInt(self.color.g);
         const green_h_coef: f32 = ((255.0 - green_float) / width);
-        const green_v_coef: f32 = (green_float / height);
 
         const blue_float: f32 = @floatFromInt(self.color.b);
         const blue_h_coef: f32 = ((255.0 - blue_float) / width);
-        const blue_v_coef: f32 = (blue_float / height);
 
         for (0..self.size.x) |i| {
             const i_float: f32 = @floatFromInt(i);
@@ -57,10 +54,7 @@ pub const ColorPicker = struct {
                 top_col.b = @intFromFloat(255 - (blue_h_coef * i_float));
             }
 
-            var bot_col = top_col;
-            bot_col.r = @intFromFloat(red_v_coef * i_float);
-            bot_col.g = @intFromFloat(green_v_coef * i_float);
-            bot_col.b = @intFromFloat(blue_v_coef * i_float);
+            const bot_col = top_col;
             var pos = self.pos;
             pos.x += @intCast(i);
 
