@@ -44,7 +44,7 @@ pub const Ui = struct {
             .ctx = ctx,
             .exit_sig = false,
             .input_field = in_f.InputField.init(ctx.stdout, .{ .x = 1, .y = 1 }, .{ .x = ctx.win_size.cols - 2, .y = 3 }),
-            .color_picker = try col_pick.ColorPicker.init(ctx.stdout, .{ .x = 0, .y = 0 }, .{ .x = 60, .y = 30 }),
+            .color_picker = try col_pick.ColorPicker.init(ctx.stdout, .{ .x = 0, .y = 0 }),
             .win_too_small = false,
         };
     }
@@ -76,7 +76,7 @@ pub const Ui = struct {
             if (self.input_field.update_flag or self.color_picker.update_flag) {
                 try self.ctx.stdout.print("\x1b[2J\x1b[H", .{}); // Clear screen and move cursor to top left
             }
-            try self.color_picker.render();
+            self.color_picker.render();
             // try self.input_field.render();
         }
     }

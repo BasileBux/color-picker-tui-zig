@@ -109,10 +109,10 @@ pub const Color = struct {
         return slice;
     }
 
-    pub fn toHex(self: *Color) u24 {
+    pub fn toHex(self: Color) u24 {
         var hex: u24 = 0;
-        hex |= self.r << 16;
-        hex |= self.g << 8;
+        hex |= @as(u24, self.r) << 16;
+        hex |= @as(u24, self.g) << 8;
         hex |= self.b;
         return hex;
     }
