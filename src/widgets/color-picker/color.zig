@@ -163,6 +163,20 @@ pub const Color = struct {
             .l = l,
         };
     }
+
+    pub fn invert(self: Color) Color {
+        self.r = 0xff - self.r;
+        self.g = 0xff - self.g;
+        self.b = 0xff - self.b;
+    }
+
+    pub fn newInverted(self: Color) Color {
+        return .{
+            .r = 0xff - self.r,
+            .g = 0xff - self.g,
+            .b = 0xff - self.b,
+        };
+    }
 };
 
 pub const Hsl = struct {

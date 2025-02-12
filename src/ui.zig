@@ -3,6 +3,7 @@ const term = @import("term.zig");
 const widgets = @import("widgets/widgets.zig");
 const in_f = @import("widgets/input.zig");
 const col_pick = @import("widgets/color-picker/color-picker.zig");
+const tint_pick = @import("widgets/color-picker/tint-picker.zig");
 
 const MIN_WIDTH = 80;
 const MIN_HEIGHT = 24;
@@ -21,8 +22,10 @@ fn handleSigint(_: c_int) callconv(.C) void {
 pub const Ui = struct {
     ctx: *term.TermContext,
     exit_sig: bool,
-    input_field: in_f.InputField,
+
     color_picker: col_pick.ColorPicker,
+    tint_picker: tint_pick.TintPicker,
+
     win_too_small: bool,
 
     pub fn init(ctx: *term.TermContext) !Ui {
@@ -43,19 +46,20 @@ pub const Ui = struct {
         return Ui{
             .ctx = ctx,
             .exit_sig = false,
-            .input_field = in_f.InputField.init(ctx.stdout, .{ .x = 1, .y = 1 }, .{ .x = ctx.win_size.cols - 2, .y = 3 }),
-            .color_picker = try col_pick.ColorPicker.init(ctx.stdout, .{ .x = 0, .y = 0 }),
+            .color_picker = try col_pick.ColorPicker.init(ctx.stdout, .{ .x = 2, .y = 2 }),
+            .tint_picker = tint_pick.TintPicker.init(ctx.stdout, .{ .x = 38, .y = 2 }),
             .win_too_small = false,
         };
     }
 
     pub fn run(self: *Ui) !void {
-        self.input_field.update_flag = false;
+        self.tint_picker.render();
         while (!self.exit_sig) {
             try self.signal_manager();
             if (self.win_too_small) continue;
             const in: term.Input = self.ctx.getInput() catch break;
-            // self.input_field.update(in);
+            try self.color_picker.update(in);
+            self.tint_picker.update(in);
             switch (in) {
                 term.InputType.control => |control| {
                     const unwrapped_control = control orelse term.ControlKeys.None;
@@ -73,11 +77,21 @@ pub const Ui = struct {
                 term.InputType.mouse => |_| {},
             }
 
-            if (self.input_field.update_flag or self.color_picker.update_flag) {
-                try self.ctx.stdout.print("\x1b[2J\x1b[H", .{}); // Clear screen and move cursor to top left
+            if (self.tint_picker.select_update) {
+                self.tint_picker.select_update = false;
+                self.color_picker.color = self.tint_picker.selected_tint;
+                self.color_picker.render_update = true;
+            }
+
+            if (self.color_picker.select_update) {
+                // try self.ctx.stdout.print("\x1b[2J\x1b[H", .{}); // Clear screen and move cursor to top left
+                try self.ctx.stdout.print("\x1b[H", .{}); // Move cursor to top left
+
+                try self.ctx.stdout.print("\x1b[K", .{});
+                try self.ctx.stdout.print("Selected color: {x}\n", .{self.color_picker.selected_color.toHex()});
+                self.color_picker.select_update = false;
             }
             self.color_picker.render();
-            // try self.input_field.render();
         }
     }
 
@@ -95,7 +109,8 @@ pub const Ui = struct {
                 self.win_too_small = true;
                 try self.ctx.stdout.print("Window too small", .{});
             }
-            self.input_field.update_flag = true;
+            self.color_picker.render_update = true;
+            self.tint_picker.render();
         }
     }
 };

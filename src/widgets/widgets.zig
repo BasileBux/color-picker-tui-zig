@@ -51,7 +51,7 @@ pub fn draw_text(stdout: std.fs.File.Writer, pos: u.Vec2, text: []const u8) !voi
 
 /// A terminal cell typically has a 1x2 ratio. This function uses the unicode u2580 char
 /// and the background / foreground colors to draw 2 stacked pixels in one terminal cell.
-pub fn draw_2_stacked_pixels(stdout: std.fs.File.Writer, pos: u.Vec2, top_color: c.Color, bot_color: c.Color) !void {
+pub inline fn draw_2_stacked_pixels(stdout: std.fs.File.Writer, pos: u.Vec2, top_color: c.Color, bot_color: c.Color) !void {
     const offset_x: i32 = if (pos.x > 0) @intCast(pos.x) else -1;
     const offset_y: i32 = if (pos.y > 0) @intCast(pos.y) else -1;
 
@@ -65,4 +65,18 @@ pub fn draw_2_stacked_pixels(stdout: std.fs.File.Writer, pos: u.Vec2, top_color:
         bot_color.g,
         bot_color.b,
     });
+}
+
+pub inline fn clear_zone(stdout: std.fs.File.Writer, pos: u.Vec2, size: u.Vec2) !void {
+    const offset_x: i32 = if (pos.x > 0) @intCast(pos.x) else -1;
+    const offset_y: i32 = if (pos.y > 0) @intCast(pos.y) else -1;
+
+    try stdout.print("\x1b[H\x1b[{d}B\x1b[{d}C", .{ offset_y, offset_x });
+
+    for (0..size.y) |_| {
+        for (0..size.x) |_| {
+            try stdout.print(" ", .{});
+        }
+        try stdout.print("\x1b[B\x1b[{d}D", .{size.x});
+    }
 }
