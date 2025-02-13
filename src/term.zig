@@ -40,17 +40,15 @@ pub const TermContext = struct {
 
         _ = linux.tcsetattr(tty_fd, linux.TCSA.NOW, &new_termios);
 
-        const stdout = std.io.getStdOut().writer();
+        const stdout = tty_file.writer();
 
         try stdout.print("\x1B[?1049h", .{}); // Set alternative screen
-        // try stdout.print("\x1B[?25l", .{}); // Hide cursor
+        try stdout.print("\x1B[?25l", .{}); // Hide cursor
 
         try stdout.print("\x1B[?1000h", .{}); // Basic mouse reporting
-        try stdout.print("\x1B[?1001h", .{}); // Highlight mouse reporting
         try stdout.print("\x1B[?1002h", .{}); // Button events with motion
         try stdout.print("\x1B[?1003h", .{}); // All motion events
         try stdout.print("\x1B[?1006h", .{}); // SGR extended mode
-        try stdout.print("\x1B[?1005h", .{}); // UTF-8 extended mode
 
         try stdout.print("\x1B[H", .{}); // Put cursor at position 0,0
 
@@ -67,16 +65,14 @@ pub const TermContext = struct {
 
     pub fn deinit(self: TermContext) void {
         _ = linux.tcsetattr(self.tty_file.handle, linux.TCSA.NOW, &self.original_state);
-        self.tty_file.close();
         self.stdout.print("\x1B[?25h", .{}) catch {};
         self.stdout.print("\x1B[?1049l", .{}) catch {};
         self.stdout.print("\x1b[?9l", .{}) catch {};
         self.stdout.print("\x1B[?1000l", .{}) catch {};
-        self.stdout.print("\x1B[?1001l", .{}) catch {};
         self.stdout.print("\x1B[?1002l", .{}) catch {};
         self.stdout.print("\x1B[?1003l", .{}) catch {};
         self.stdout.print("\x1B[?1006l", .{}) catch {};
-        self.stdout.print("\x1B[?1005l", .{}) catch {};
+        self.tty_file.close();
     }
 
     const Winsize = extern struct {

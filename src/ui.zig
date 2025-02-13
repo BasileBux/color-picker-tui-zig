@@ -3,8 +3,8 @@ const term = @import("term.zig");
 const shade_pick = @import("color/shade-picker.zig");
 const hue_pick = @import("color/hue-picker.zig");
 
-const MIN_WIDTH = 80;
-const MIN_HEIGHT = 24;
+const MIN_WIDTH = 32;
+const MIN_HEIGHT = 16;
 
 var window_resized = std.atomic.Value(bool).init(false);
 fn handleSigwinch(sig: c_int) callconv(.C) void {

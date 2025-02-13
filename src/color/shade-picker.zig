@@ -106,20 +106,27 @@ pub const ShadePicker = struct {
         if (!self.render_update) return;
         self.clear();
         self.calculateTable();
-        var pos_r = self.pos;
+
+        const offset_x: i32 = if (self.pos.x > 0) @intCast(self.pos.x) else -1;
+        const offset_y: i32 = if (self.pos.y > 0) @intCast(self.pos.y) else -1;
+        self.stdout.print("\x1b[H\x1b[{d}B\x1b[{d}C", .{ offset_y, offset_x }) catch {};
+
         var i: usize = 0;
-        var j: usize = 0;
         while (i < self.color_table.len) {
-            pos_r.x = self.pos.x;
-            while (j < self.color_table[i].len) {
-                w.draw_2_stacked_pixels(self.stdout, pos_r, self.color_table[i][j], self.color_table[i + 1][j]) catch {};
-                pos_r.x += 1;
-                j += 1;
+            for (0..self.color_table[i].len) |j| {
+                self.stdout.print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m\u{2580}", .{
+                    self.color_table[i][j].r,
+                    self.color_table[i][j].g,
+                    self.color_table[i][j].b,
+                    self.color_table[i + 1][j].r,
+                    self.color_table[i + 1][j].g,
+                    self.color_table[i + 1][j].b,
+                }) catch {};
             }
-            j = 0;
-            pos_r.y += 1;
+            self.stdout.print("\x1b[B\x1b[{d}D", .{SIZE}) catch {};
             i += 2;
         }
+        self.stdout.print("\x1b[0m", .{}) catch {};
         self.render_update = false;
     }
 };
