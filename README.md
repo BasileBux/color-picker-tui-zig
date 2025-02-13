@@ -4,6 +4,10 @@ This is a terminal based color picker. It is a little tool to help you choose pi
 translate them from / to different formats. It is linux only but a macos version could happen
 as it really similar to linux. It is highly inspired by [this](https://htmlcolorcodes.com/). 
 
+The TUI draws a big square for color selection. This square could not appear completely square
+depending on your font. For better looking squares, I recommend using a font which has a 1:2 ratio
+such as [FiraCode](https://github.com/tonsky/FiraCode). 
+
 It is mainly a way to learn `zig` and do a nice TUI. I won't use any dependencies at all so
 all you need to compile it is `zig`. 
 
