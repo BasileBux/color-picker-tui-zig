@@ -45,7 +45,7 @@ pub const Ui = struct {
             .ctx = ctx,
             .exit_sig = false,
             .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 2, .y = 2 }),
-            .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = 38, .y = 2 }),
+            .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = 54, .y = 2 }),
             .win_too_small = false,
         };
     }
@@ -82,6 +82,10 @@ pub const Ui = struct {
             }
 
             if (self.shade_picker.select_update) {
+                if (self.ctx.background_color) |bg| {
+                    try self.ctx.stdout.print("\x1B[48;2;{};{};{}m", .{ bg[0], bg[1], bg[2] });
+                }
+
                 try self.ctx.stdout.print("\x1b[H", .{}); // Move cursor to top left
 
                 try self.ctx.stdout.print("\x1b[K", .{});
@@ -110,6 +114,8 @@ pub const Ui = struct {
             if (self.ctx.win_size.cols < MIN_WIDTH or self.ctx.win_size.rows < MIN_HEIGHT) {
                 self.win_too_small = true;
                 try self.ctx.stdout.print("Window too small", .{});
+            } else {
+                self.win_too_small = false;
             }
             self.shade_picker.render_update = true;
             self.hue_picker.render();

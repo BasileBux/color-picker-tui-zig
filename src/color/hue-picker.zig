@@ -4,7 +4,7 @@ const u = @import("../utils.zig");
 const col = @import("color.zig");
 const term = @import("../term.zig");
 
-const HEIGHT: f32 = 32.0;
+const HEIGHT: f32 = 48.0;
 const I_HEIGHT: u32 = @intFromFloat(HEIGHT);
 const WIDTH: f32 = 4.0;
 const I_WIDTH: u32 = @intFromFloat(WIDTH);

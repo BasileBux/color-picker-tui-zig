@@ -5,6 +5,7 @@ const termios = linux.termios;
 // Raw mode solution from: https://blog.fabrb.com/2024/capturing-input-in-real-time-zig-0-14/
 
 const INPUT_BUFFER_SIZE = 32;
+const BACKGROUND_COLOR: ?[3]u8 = .{ 0x1d, 0x1d, 0x1d }; // null for no background color
 
 pub const TermContext = struct {
     stdout: std.fs.File.Writer,
@@ -14,6 +15,7 @@ pub const TermContext = struct {
     input_buffer: [INPUT_BUFFER_SIZE]u8 = undefined,
     input_len: usize = 0,
     win_size: WinSize,
+    background_color: ?[3]u8, // R,G,B
 
     pub const WinSize = struct {
         rows: u32,
@@ -50,6 +52,9 @@ pub const TermContext = struct {
         try stdout.print("\x1B[?1003h", .{}); // All motion events
         try stdout.print("\x1B[?1006h", .{}); // SGR extended mode
 
+        if (BACKGROUND_COLOR) |bg| {
+            try stdout.print("\x1B[48;2;{};{};{}m\x1B[2J", .{ bg[0], bg[1], bg[2] });
+        }
         try stdout.print("\x1B[H", .{}); // Put cursor at position 0,0
 
         var ctx = TermContext{
@@ -58,6 +63,7 @@ pub const TermContext = struct {
             .original_state = old_termios,
             .tty_file = tty_file,
             .win_size = WinSize{ .rows = 0, .cols = 0 },
+            .background_color = BACKGROUND_COLOR,
         };
         try ctx.getTermSize();
         return ctx;
@@ -72,6 +78,7 @@ pub const TermContext = struct {
         self.stdout.print("\x1B[?1002l", .{}) catch {};
         self.stdout.print("\x1B[?1003l", .{}) catch {};
         self.stdout.print("\x1B[?1006l", .{}) catch {};
+        self.stdout.print("\x1B[0m", .{}) catch {};
         self.tty_file.close();
     }
 

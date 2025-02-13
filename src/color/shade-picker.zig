@@ -5,7 +5,7 @@ const u = @import("../utils.zig");
 const term = @import("../term.zig");
 
 /// SIZE must be even. If not, the picker's last row will be incorrect.
-const SIZE: u16 = 32;
+const SIZE: u16 = 48;
 
 pub const ShadePicker = struct {
     stdout: std.fs.File.Writer,
