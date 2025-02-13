@@ -12,11 +12,11 @@ pub fn main() !void {
         .retain_metadata = false,
         .verbose_log = false,
     }){};
-    _ = gpa.allocator();
+    const gpa_allocator = gpa.allocator();
 
     var ctx = try term.TermContext.init();
     defer ctx.deinit();
 
-    var tui = try ui.Ui.init(&ctx);
+    var tui = try ui.Ui.init(&ctx, gpa_allocator);
     try tui.run();
 }

@@ -26,7 +26,7 @@ pub const Ui = struct {
 
     win_too_small: bool,
 
-    pub fn init(ctx: *term.TermContext) !Ui {
+    pub fn init(ctx: *term.TermContext, allocator: std.mem.Allocator) !Ui {
         // Signal handling
         const sigint_act = std.os.linux.Sigaction{
             .handler = .{ .handler = handleSigint },
@@ -44,7 +44,7 @@ pub const Ui = struct {
         return Ui{
             .ctx = ctx,
             .exit_sig = false,
-            .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, .{ .x = 2, .y = 2 }),
+            .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 2, .y = 2 }),
             .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = 38, .y = 2 }),
             .win_too_small = false,
         };
@@ -82,7 +82,6 @@ pub const Ui = struct {
             }
 
             if (self.shade_picker.select_update) {
-                // try self.ctx.stdout.print("\x1b[2J\x1b[H", .{}); // Clear screen and move cursor to top left
                 try self.ctx.stdout.print("\x1b[H", .{}); // Move cursor to top left
 
                 try self.ctx.stdout.print("\x1b[K", .{});
@@ -94,7 +93,7 @@ pub const Ui = struct {
                 });
                 self.shade_picker.select_update = false;
             }
-            self.shade_picker.render();
+            self.shade_picker.calculateTableAndRender();
         }
     }
 

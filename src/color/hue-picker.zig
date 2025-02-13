@@ -70,7 +70,7 @@ pub const HuePicker = struct {
 
                 if (mouse.x >= self.pos.x and mouse.x <= self.pos.x + I_WIDTH and
                     mouse.y > self.pos.y and mouse.y <= self.pos.y + (I_HEIGHT / 2) and
-                    button == 0 and is_drag == 0 and modifiers == 0 and mouse.suffix == 'M')
+                    button == 0 and is_drag >= 0 and modifiers == 0 and mouse.suffix == 'M')
                 {
                     var y_idx = ((mouse.y - 1) - self.pos.y) * 2;
                     y_idx = if (y_idx >= I_HEIGHT - 2) I_HEIGHT - 1 else y_idx;
