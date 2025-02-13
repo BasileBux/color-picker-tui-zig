@@ -1,8 +1,8 @@
 const std = @import("std");
-const w = @import("../widgets.zig");
-const u = @import("../../utils.zig");
+const w = @import("../widgets/widgets.zig");
+const u = @import("../utils.zig");
 const col = @import("color.zig");
-const term = @import("../../term.zig");
+const term = @import("../term.zig");
 
 const HEIGHT: f32 = 32.0;
 const I_HEIGHT: u32 = @intFromFloat(HEIGHT);
@@ -11,10 +11,10 @@ const I_WIDTH: u32 = @intFromFloat(WIDTH);
 const STEPS: f32 = 12.0;
 const DELTA: f32 = 255.0 / ((HEIGHT * 2) / STEPS);
 
-pub const TintPicker = struct {
+pub const HuePicker = struct {
     stdout: std.fs.File.Writer,
     pos: u.Vec2,
-    selected_tint: col.Color,
+    selected_hue: col.Color,
     select_update: bool,
     tint_picker: [@intFromFloat(HEIGHT * 2.0)]col.Color = init: {
         var buff: [@intFromFloat(HEIGHT * 2.0)]col.Color = undefined;
@@ -52,16 +52,16 @@ pub const TintPicker = struct {
         break :init buff;
     },
 
-    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2) TintPicker {
+    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2) HuePicker {
         return .{
             .stdout = stdout,
             .pos = pos,
-            .selected_tint = col.Color.fromHex(0xff0000),
+            .selected_hue = col.Color.fromHex(0xff0000),
             .select_update = true,
         };
     }
 
-    pub fn update(self: *TintPicker, in: term.Input) void {
+    pub fn update(self: *HuePicker, in: term.Input) void {
         switch (in) {
             .mouse => |mouse| {
                 const button = mouse.b & 0x3;
@@ -69,12 +69,12 @@ pub const TintPicker = struct {
                 const modifiers = mouse.b & 12;
 
                 if (mouse.x >= self.pos.x and mouse.x <= self.pos.x + I_WIDTH and
-                    mouse.y > self.pos.y and mouse.y <= self.pos.y + I_HEIGHT and
+                    mouse.y > self.pos.y and mouse.y <= self.pos.y + (I_HEIGHT / 2) and
                     button == 0 and is_drag == 0 and modifiers == 0 and mouse.suffix == 'M')
                 {
                     var y_idx = ((mouse.y - 1) - self.pos.y) * 2;
                     y_idx = if (y_idx >= I_HEIGHT - 2) I_HEIGHT - 1 else y_idx;
-                    self.selected_tint = self.tint_picker[y_idx];
+                    self.selected_hue = self.tint_picker[y_idx];
                     self.select_update = true;
                 }
             },
@@ -82,7 +82,7 @@ pub const TintPicker = struct {
         }
     }
 
-    pub fn render(self: TintPicker) void {
+    pub fn render(self: HuePicker) void {
         var pos_r: u.Vec2 = self.pos;
         var i: usize = 0;
         while (i < HEIGHT) {

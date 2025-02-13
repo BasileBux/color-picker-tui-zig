@@ -1,34 +1,36 @@
 const std = @import("std");
 const c = @import("color.zig");
-const w = @import("../widgets.zig");
-const u = @import("../../utils.zig");
-const term = @import("../../term.zig");
+const w = @import("../widgets/widgets.zig");
+const u = @import("../utils.zig");
+const term = @import("../term.zig");
 
 const SIZE: u16 = 32;
 
-pub const ColorPicker = struct {
+pub const ShadePicker = struct {
     stdout: std.fs.File.Writer,
     pos: u.Vec2,
     color: c.Color, // color in the top right corner
     selected_color: c.Color,
+    selected_pos: u.Vec2,
     color_table: [SIZE][SIZE]c.Color,
 
     render_update: bool,
     select_update: bool,
 
-    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2) !ColorPicker {
+    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2) !ShadePicker {
         return .{
             .stdout = stdout,
             .pos = pos,
-            .color = try c.Color.initRandom(),
+            .color = c.Color.init(),
             .selected_color = c.Color.init(),
+            .selected_pos = .{ .x = SIZE - 1, .y = 0 },
             .color_table = undefined,
             .render_update = true,
             .select_update = true,
         };
     }
 
-    pub fn update(self: *ColorPicker, in: term.Input) !void {
+    pub fn update(self: *ShadePicker, in: term.Input) !void {
         switch (in) {
             .mouse => |mouse| {
                 const button = mouse.b & 0x3;
@@ -43,6 +45,7 @@ pub const ColorPicker = struct {
                     var y_idx = ((mouse.y - 1) - self.pos.y) * 2;
                     y_idx = if (y_idx >= SIZE - 2) SIZE - 1 else y_idx;
                     self.selected_color = self.color_table[y_idx][x_idx];
+                    self.selected_pos = .{ .x = x_idx, .y = y_idx };
                     self.select_update = true;
                 }
             },
@@ -50,7 +53,7 @@ pub const ColorPicker = struct {
         }
     }
 
-    pub fn calculateTable(self: *ColorPicker) void {
+    pub fn calculateTable(self: *ShadePicker) void {
         const size: f32 = @floatFromInt(SIZE);
 
         var max_left_value: f32 = 255.0;
@@ -65,11 +68,11 @@ pub const ColorPicker = struct {
         const right_b_delta: f32 = blue_float / (size - 1);
 
         for (0..SIZE) |i| {
-            const red_h_coef: f32 = ((max_left_value - red_float) / size);
+            const red_h_coef: f32 = ((max_left_value - red_float) / (size - 1));
 
-            const green_h_coef: f32 = ((max_left_value - green_float) / size);
+            const green_h_coef: f32 = ((max_left_value - green_float) / (size - 1));
 
-            const blue_h_coef: f32 = ((max_left_value - blue_float) / size);
+            const blue_h_coef: f32 = ((max_left_value - blue_float) / (size - 1));
 
             for (0..SIZE) |j| {
                 if (i == SIZE - 1) {
@@ -92,13 +95,14 @@ pub const ColorPicker = struct {
             green_float -= right_g_delta;
             blue_float -= right_b_delta;
         }
+        self.selected_color = self.color_table[self.selected_pos.y][self.selected_pos.x];
     }
 
-    pub inline fn clear(self: *ColorPicker) void {
+    pub inline fn clear(self: *ShadePicker) void {
         w.clear_zone(self.stdout, self.pos, .{ .x = SIZE, .y = SIZE / 2 }) catch {};
     }
 
-    pub fn render(self: *ColorPicker) void {
+    pub fn render(self: *ShadePicker) void {
         if (!self.render_update) return;
         self.clear();
         self.calculateTable();

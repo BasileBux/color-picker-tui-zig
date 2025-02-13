@@ -1,6 +1,6 @@
 const std = @import("std");
 const u = @import("../utils.zig");
-const c = @import("color-picker/color.zig");
+const c = @import("../color/color.zig");
 // This file cannot have any other dependencies. Might create
 // circular dependencies. This should only have simple basic
 // functions
