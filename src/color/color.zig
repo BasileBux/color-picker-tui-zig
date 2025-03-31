@@ -117,12 +117,18 @@ pub const Color = struct {
         return hex;
     }
 
+    pub fn toHexString(self: Color) ![]const u8 {
+        var buffer: [6]u8 = undefined;
+        const slice = try std.fmt.bufPrint(&buffer, "{x:0>6}", .{self.toHex()});
+        return slice;
+    }
+
     pub fn toHexWithAlpha(self: *Color) u32 {
         const hex = self.toHex();
         return (hex << 8) | self.a;
     }
 
-    pub fn toHsl(self: *Color) Hsl {
+    pub fn toHsl(self: Color) Hsl {
         var r: f32 = @floatFromInt(self.r);
         r /= 255.0;
         var g: f32 = @floatFromInt(self.g);
@@ -183,4 +189,12 @@ pub const Hsl = struct {
     h: f32,
     s: f32,
     l: f32,
+
+    pub fn init() Hsl {
+        return .{
+            .h = 0.0,
+            .s = 0.0,
+            .l = 0.0,
+        };
+    }
 };

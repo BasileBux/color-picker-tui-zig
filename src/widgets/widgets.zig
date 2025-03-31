@@ -5,18 +5,18 @@ const c = @import("../color/color.zig");
 // circular dependencies. This should only have simple basic
 // functions
 
-const VERTICAL_LINE = "\u{2502}";
-const HORIZONTAL_LINE = "\u{2500}";
+pub const VERTICAL_LINE = "\u{2502}";
+pub const HORIZONTAL_LINE = "\u{2500}";
 
-const SQUARE_TOP_LEFT_COR = "\u{250C}";
-const SQUARE_TOP_RIGHT_COR = "\u{2510}";
-const SQUARE_BOT_LEFT_COR = "\u{2514}";
-const SQUARE_BOT_RIGHT_COR = "\u{2518}";
+pub const SQUARE_TOP_LEFT_COR = "\u{250C}";
+pub const SQUARE_TOP_RIGHT_COR = "\u{2510}";
+pub const SQUARE_BOT_LEFT_COR = "\u{2514}";
+pub const SQUARE_BOT_RIGHT_COR = "\u{2518}";
 
-const ROUND_TOP_LEFT_COR = "\u{256D}";
-const ROUND_TOP_RIGHT_COR = "\u{256E}";
-const ROUND_BOT_LEFT_COR = "\u{2570}";
-const ROUND_BOT_RIGHT_COR = "\u{256F}";
+pub const ROUND_TOP_LEFT_COR = "\u{256D}";
+pub const ROUND_TOP_RIGHT_COR = "\u{256E}";
+pub const ROUND_BOT_LEFT_COR = "\u{2570}";
+pub const ROUND_BOT_RIGHT_COR = "\u{256F}";
 
 pub fn draw_box(stdout: std.fs.File.Writer, rounded: bool, pos: u.Vec2, size: u.Vec2) !void {
     if (size.y < 2 or size.x < 2) {

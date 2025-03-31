@@ -3,9 +3,10 @@ const c = @import("color.zig");
 const w = @import("../widgets/widgets.zig");
 const u = @import("../utils.zig");
 const term = @import("../term.zig");
+const commons = @import("../commons.zig");
 
 /// SIZE must be even. If not, the picker's last row will be incorrect.
-const SIZE: u16 = 48;
+const SIZE: u16 = @intFromFloat(commons.SIZE_GLOBAL);
 
 pub const ShadePicker = struct {
     stdout: std.fs.File.Writer,
@@ -126,6 +127,7 @@ pub const ShadePicker = struct {
         buffer.writer().print("\x1b[0m", .{}) catch {};
         self.stdout.writeAll(buffer.items) catch {};
 
+        self.select_update = true;
         self.selected_color = self.color_table[self.selected_pos.y][self.selected_pos.x];
         self.render_update = false;
     }

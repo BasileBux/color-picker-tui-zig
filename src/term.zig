@@ -5,7 +5,8 @@ const termios = linux.termios;
 // Raw mode solution from: https://blog.fabrb.com/2024/capturing-input-in-real-time-zig-0-14/
 
 const INPUT_BUFFER_SIZE = 32;
-const BACKGROUND_COLOR: ?[3]u8 = .{ 0x1d, 0x1d, 0x1d }; // null for no background color
+// const BACKGROUND_COLOR: ?[3]u8 = .{ 0x0d, 0x0d, 0x0d }; // null for no background color
+const BACKGROUND_COLOR: ?[3]u8 = null; // null for no background color
 
 pub const TermContext = struct {
     stdout: std.fs.File.Writer,
@@ -110,7 +111,7 @@ pub const TermContext = struct {
             bytes[1] == 0x5B and bytes[2] == 0x3C)
         {
             const mouse_data = bytes[3 .. bytes.len - 1];
-            var parts = std.mem.split(u8, mouse_data, ";");
+            var parts = std.mem.splitAny(u8, mouse_data, ";");
             // b, x, y
             var mouse: [3]u32 = undefined;
             var count: usize = 0;

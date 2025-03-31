@@ -3,13 +3,14 @@ const w = @import("../widgets/widgets.zig");
 const u = @import("../utils.zig");
 const col = @import("color.zig");
 const term = @import("../term.zig");
+const commons = @import("../commons.zig");
 
-const HEIGHT: f32 = 48.0;
+const HEIGHT: f32 = commons.SIZE_GLOBAL;
 const I_HEIGHT: u32 = @intFromFloat(HEIGHT);
-const WIDTH: f32 = 4.0;
+pub const WIDTH: f32 = 6.0;
 const I_WIDTH: u32 = @intFromFloat(WIDTH);
 const STEPS: f32 = 12.0;
-const DELTA: f32 = 255.0 / ((HEIGHT * 2) / STEPS);
+const DELTA: f32 = 255.0 / (((HEIGHT * 2) / STEPS));
 
 pub const HuePicker = struct {
     stdout: std.fs.File.Writer,

@@ -2,9 +2,11 @@ const std = @import("std");
 const term = @import("term.zig");
 const shade_pick = @import("color/shade-picker.zig");
 const hue_pick = @import("color/hue-picker.zig");
+const commons = @import("commons.zig");
+const color_input = @import("color/input.zig");
 
-const MIN_WIDTH = 32;
-const MIN_HEIGHT = 16;
+const MIN_WIDTH: u32 = @intFromFloat(commons.SIZE_GLOBAL);
+const MIN_HEIGHT: u32 = @intFromFloat(commons.SIZE_GLOBAL + hue_pick.WIDTH);
 
 var window_resized = std.atomic.Value(bool).init(false);
 fn handleSigwinch(sig: c_int) callconv(.C) void {
@@ -23,6 +25,7 @@ pub const Ui = struct {
 
     shade_picker: shade_pick.ShadePicker,
     hue_picker: hue_pick.HuePicker,
+    input: color_input.ColorInput,
 
     win_too_small: bool,
 
@@ -44,8 +47,9 @@ pub const Ui = struct {
         return Ui{
             .ctx = ctx,
             .exit_sig = false,
-            .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 2, .y = 2 }),
-            .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = 54, .y = 2 }),
+            .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 1, .y = 2 }),
+            .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING, .y = 2 }),
+            .input = color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH, .y = 2 }),
             .win_too_small = false,
         };
     }
@@ -58,13 +62,13 @@ pub const Ui = struct {
             const in: term.Input = self.ctx.getInput() catch break;
             try self.shade_picker.update(in);
             self.hue_picker.update(in);
+            try self.input.update(in);
             switch (in) {
                 term.InputType.control => |control| {
                     const unwrapped_control = control orelse term.ControlKeys.None;
                     switch (unwrapped_control) {
                         term.ControlKeys.Escape => {
                             self.exit_sig = true;
-                            break;
                         },
                         else => {
                             // Handle other control keys
@@ -89,14 +93,33 @@ pub const Ui = struct {
                 try self.ctx.stdout.print("\x1b[H", .{}); // Move cursor to top left
 
                 try self.ctx.stdout.print("\x1b[K", .{});
-                try self.ctx.stdout.print("Selected color: {x} ({d} : {d}) - hue: {x}\n", .{
-                    self.shade_picker.selected_color.toHex(),
-                    self.shade_picker.selected_pos.x,
-                    self.shade_picker.selected_pos.y,
-                    self.hue_picker.selected_hue.toHex(),
+                try self.ctx.stdout.print("\x1b[1C", .{});
+                try self.ctx.stdout.print("\x1B[0m\x1B[48;2;{};{};{}m{s}{s}\x1B[0m", .{
+                    self.shade_picker.selected_color.r,
+                    self.shade_picker.selected_color.g,
+                    self.shade_picker.selected_color.b,
+                    commons.WHITESPACE,
+                    commons.WHITESPACE,
                 });
+                const hex_color = self.shade_picker.selected_color.toHex();
+                const hsl_color = self.shade_picker.selected_color.toHsl();
+                try self.ctx.stdout.print("{s}HEX: #{x:0>6}{s}RGB: {d}, {d}, {d}{s}HSL: {d:.0}, {d:.2}%, {d:.2}%", .{
+                    commons.WHITESPACE,
+                    hex_color,
+                    commons.WHITESPACE,
+                    self.shade_picker.selected_color.r,
+                    self.shade_picker.selected_color.g,
+                    self.shade_picker.selected_color.b,
+                    commons.WHITESPACE,
+                    hsl_color.h,
+                    hsl_color.s * 100,
+                    hsl_color.l * 100,
+                });
+                self.input.updateColor(self.shade_picker.selected_color);
                 self.shade_picker.select_update = false;
             }
+            try self.input.render();
+
             self.shade_picker.calculateTableAndRender();
         }
     }
