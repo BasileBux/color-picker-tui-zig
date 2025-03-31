@@ -13,7 +13,8 @@ recommend using a font which has a 1:2 ratio such as
 It is mainly a way to learn `zig` and do a nice TUI. I won't use any
 dependencies at all so all you need to compile it is `zig`.
 
-> [!WARNING] The clipboard features only work in Wayland. X11 sucks and I don't
+> [!WARNING]
+> The clipboard features only work in Wayland. X11 sucks and I don't
 > want to support it.
 
 ## Usage
