@@ -5,6 +5,8 @@ pick colors and translate them from / to different formats. It is linux only but
 a macos version could happen as it really similar to linux. It is highly
 inspired by [this](https://htmlcolorcodes.com/).
 
+![demo](https://raw.githubusercontent.com/BasileBux/color-picker-tui/main/assets/demo.mp4)
+
 The TUI draws a big square for color selection. This square could not appear
 completely square depending on your font. For better looking squares, I
 recommend using a font which has a 1:2 ratio such as
