@@ -6,7 +6,8 @@ const termios = linux.termios;
 
 const INPUT_BUFFER_SIZE = 32;
 // const BACKGROUND_COLOR: ?[3]u8 = .{ 0x0d, 0x0d, 0x0d }; // null for no background color
-const BACKGROUND_COLOR: ?[3]u8 = null; // null for no background color
+const BACKGROUND_COLOR: ?[3]u8 = .{ 0x1d, 0x1d, 0x1d }; // null for no background color
+// const BACKGROUND_COLOR: ?[3]u8 = null; // null for no background color
 
 pub const TermContext = struct {
     stdout: std.fs.File.Writer,

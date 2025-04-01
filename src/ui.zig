@@ -120,6 +120,9 @@ pub const Ui = struct {
                     commons.WHITESPACE,
                     commons.WHITESPACE,
                 });
+                if (self.ctx.background_color) |bg| {
+                    try self.ctx.stdout.print("\x1B[48;2;{};{};{}m", .{ bg[0], bg[1], bg[2] });
+                }
                 const hex_color = self.shade_picker.selected_color.toHex();
                 const hsl_color = self.shade_picker.selected_color.toHsl();
                 try self.ctx.stdout.print("{s}HEX: #{x:0>6}{s}RGB: {d}, {d}, {d}{s}HSL: {d:.0}, {d:.2}%, {d:.2}%", .{
@@ -139,7 +142,7 @@ pub const Ui = struct {
             }
 
             self.shade_picker.calculateTableAndRender(self.pos);
-            try self.input.render(self.pos);
+            try self.input.render(self.pos, self.ctx.background_color);
         }
     }
 
@@ -162,6 +165,10 @@ pub const Ui = struct {
                 self.pos.x = if (self.ctx.win_size.cols > MIN_WIDTH) @intCast(self.ctx.win_size.cols / 2 - MIN_WIDTH / 2) else 0;
                 self.pos.y = if (self.ctx.win_size.rows > MIN_HEIGHT) @intCast(self.ctx.win_size.rows / 2 - MIN_HEIGHT / 2) else 0;
 
+                if (self.ctx.background_color) |bg| {
+                    try self.ctx.stdout.print("\x1B[48;2;{};{};{}m", .{ bg[0], bg[1], bg[2] });
+                }
+                try self.ctx.stdout.print("\x1b[2J\x1b[H", .{}); // Clear screen and move cursor to top left
                 self.shade_picker.render_update = true;
                 self.hue_picker.render(self.pos);
             }

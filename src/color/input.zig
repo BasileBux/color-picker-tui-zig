@@ -199,19 +199,24 @@ pub const ColorInput = struct {
         }
     }
 
-    pub fn render(self: *ColorInput, offset: u.Vec2) !void {
+    pub fn render(self: *ColorInput, offset: u.Vec2, background: ?[3]u8) !void {
         if (!self.update_flag) return;
         self.update_flag = false;
         const offset_x: i32 = if (self.pos.x + offset.x > 0) @intCast(self.pos.x + offset.x) else -1;
         const offset_y: i32 = if (self.pos.y + offset.y > 0) @intCast(self.pos.y + offset.y) else -1;
 
         try self.stdout.print("\x1b[H\x1b[{d}B\x1b[{d}C", .{ offset_y, offset_x });
-        try self.stdout.print("\x1b[48;2;{d};{d};{d}m{s}\x1b[0m", .{
+        try self.stdout.print("\x1b[48;2;{d};{d};{d}m{s}", .{
             self.color.r,
             self.color.g,
             self.color.b,
             COLOR_BLOCK,
         });
+        if (background) |bg| {
+            try self.stdout.print("\x1b[48;2;{d};{d};{d}m", .{ bg[0], bg[1], bg[2] });
+        } else {
+            try self.stdout.print("\x1b[0m", .{});
+        }
 
         try self.hex_input.render(offset);
 

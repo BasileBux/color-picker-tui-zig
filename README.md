@@ -26,7 +26,17 @@ wish.
 
 ## Note
 
-This project doesn't use any dependencies. So if you want to learn how to do a
-TUI (in zig), you can just read the code. My implementation is far from perfect
-and is in no way a reference, but it works. If you want to learn more about
-terminals, [this blogpost](https://poor.dev/blog/terminal-anatomy/) is amazing.
+This is a project I did to learn and explore many things at once. The codebase
+is really messy and for some parts a disaster. I most likely won't fix it as
+it is not the purpose. If you are interested, the things I explored are:
+- Terminal UI
+- Zig general concepts
+- Zig comptime (really powerful)
+- Buffers
+- OOP composition (I now know that I don't like OOP)
+
+I tried to make as little allocations as possible which isn't a viable solution
+in production code. But the allocators concept in Zig is really strong and I
+should probably explore it more. I also don't use any other dependencies than zig's
+standard library. 
+
