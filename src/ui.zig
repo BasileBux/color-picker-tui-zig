@@ -101,8 +101,8 @@ pub const Ui = struct {
                     const TOP_RGB_OFF: u32 = TOP_HEX_OFF + TOP_HEX_SIZE + @as(u32, commons.WHITESPACE.len);
                     var TOP_RGB_SIZE: u32 = 0;
                     TOP_RGB_SIZE += if (self.shade_picker.color.r == 0) 1 else std.math.log10(self.shade_picker.color.r);
-                    TOP_RGB_SIZE += if (self.shade_picker.color.g == 0) 1 else std.math.log10(self.shade_picker.color.r);
-                    TOP_RGB_SIZE += if (self.shade_picker.color.b == 0) 1 else std.math.log10(self.shade_picker.color.r);
+                    TOP_RGB_SIZE += if (self.shade_picker.color.g == 0) 1 else std.math.log10(self.shade_picker.color.g);
+                    TOP_RGB_SIZE += if (self.shade_picker.color.b == 0) 1 else std.math.log10(self.shade_picker.color.b);
                     TOP_RGB_SIZE += 10;
 
                     const TOP_HSL_OFF: u32 = TOP_RGB_OFF + TOP_RGB_SIZE + @as(u32, commons.WHITESPACE.len);

@@ -115,7 +115,7 @@ pub const Color = struct {
 
     pub fn toHexString(self: Color, allocator: std.mem.Allocator) ![]const u8 {
         const hex_value = self.toHex();
-        const result = try std.fmt.allocPrint(allocator, "{X:0>6}", .{hex_value});
+        const result = try std.fmt.allocPrint(allocator, "{x:0>6}", .{hex_value});
         return result;
     }
 
