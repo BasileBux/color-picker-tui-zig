@@ -6,7 +6,7 @@ const term = @import("../term.zig");
 const commons = @import("../commons.zig");
 
 /// SIZE must be even. If not, the picker's last row will be incorrect.
-const SIZE: u16 = @intFromFloat(commons.SIZE_GLOBAL);
+pub const SIZE: u16 = @intFromFloat(commons.SIZE_GLOBAL);
 
 pub const ShadePicker = struct {
     stdout: std.fs.File.Writer,
@@ -34,19 +34,20 @@ pub const ShadePicker = struct {
         };
     }
 
-    pub fn update(self: *ShadePicker, in: term.Input) !void {
+    pub fn update(self: *ShadePicker, in: term.Input, offset: u.Vec2) !void {
         switch (in) {
             .mouse => |mouse| {
                 const button = mouse.b & 0x3;
                 const is_drag = mouse.b & 32;
                 const modifiers = mouse.b & 12;
 
-                if (mouse.x >= self.pos.x and mouse.x <= self.pos.x + SIZE and
-                    mouse.y > self.pos.y and mouse.y <= (self.pos.y + SIZE) / 2 + 1 and
+                if (mouse.x >= self.pos.x + offset.x and mouse.x <= self.pos.x + offset.x + SIZE and
+                    mouse.y > self.pos.y + offset.y and mouse.y <= (self.pos.y + offset.y + SIZE) / 2 + 1 and
                     button == 0 and is_drag >= 0 and modifiers == 0 and mouse.suffix == 'M')
                 {
-                    const x_idx = if ((mouse.x - 1) >= self.pos.x) (mouse.x - 1) - self.pos.x else 0;
-                    var y_idx = ((mouse.y - 1) - self.pos.y) * 2;
+                    var x_idx = if ((mouse.x - 1) >= (self.pos.x + offset.x)) (mouse.x - 1) - (self.pos.x + offset.y) else 0;
+                    x_idx = if (x_idx >= SIZE) SIZE - 1 else x_idx;
+                    var y_idx = ((mouse.y - 1) - (self.pos.y + offset.y)) * 2;
                     y_idx = if (y_idx >= SIZE - 2) SIZE - 1 else y_idx;
                     self.selected_color = self.color_table[y_idx][x_idx];
                     self.selected_pos = .{ .x = x_idx, .y = y_idx };
@@ -57,14 +58,14 @@ pub const ShadePicker = struct {
         }
     }
 
-    pub fn calculateTableAndRender(self: *ShadePicker) void {
+    pub fn calculateTableAndRender(self: *ShadePicker, offset: u.Vec2) void {
         if (!self.render_update) return;
         var buffer = std.ArrayList(u8).init(self.allocator);
         defer buffer.deinit();
 
         // Initial cursor positioning
-        const offset_x: i32 = if (self.pos.x > 0) @intCast(self.pos.x) else -1;
-        const offset_y: i32 = if (self.pos.y > 0) @intCast(self.pos.y) else -1;
+        const offset_x: i32 = if (self.pos.x + offset.x > 0) @intCast(self.pos.x + offset.x) else -1;
+        const offset_y: i32 = if (self.pos.y + offset.y > 0) @intCast(self.pos.y + offset.y) else -1;
         buffer.writer().print("\x1b[H\x1b[{d}B\x1b[{d}C", .{ offset_y, offset_x }) catch {};
 
         const size: f32 = @floatFromInt(SIZE);

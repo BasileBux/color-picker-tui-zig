@@ -128,19 +128,19 @@ pub const ColorInput = struct {
         self.l_input.updateColor(&buffer);
     }
 
-    pub fn update(self: *ColorInput, in: term.Input) !?col.Color {
+    pub fn update(self: *ColorInput, in: term.Input, offset: u.Vec2) !?col.Color {
         var color_update = false;
 
-        color_update = self.hex_input.update(in);
+        color_update = self.hex_input.update(in, offset);
         if (color_update) {
             self.update_flag = true;
             self.color_update = true;
             return col.Color.fromHex(@intCast(self.hex_input.getNumber(0)));
         }
 
-        const color_update_r = self.r_input.update(in);
-        const color_update_g = self.g_input.update(in);
-        const color_update_b = self.b_input.update(in);
+        const color_update_r = self.r_input.update(in, offset);
+        const color_update_g = self.g_input.update(in, offset);
+        const color_update_b = self.b_input.update(in, offset);
         if (color_update_r or color_update_g or color_update_b) {
             self.update_flag = true;
             self.color_update = true;
@@ -151,9 +151,9 @@ pub const ColorInput = struct {
             );
         }
 
-        const color_update_h = self.h_input.update(in);
-        const color_update_s = self.s_input.update(in);
-        const color_update_l = self.l_input.update(in);
+        const color_update_h = self.h_input.update(in, offset);
+        const color_update_s = self.s_input.update(in, offset);
+        const color_update_l = self.l_input.update(in, offset);
         const s_value: f32 = @floatFromInt(self.s_input.getNumber(100));
         const l_value: f32 = @floatFromInt(self.l_input.getNumber(100));
         if (color_update_h or color_update_s or color_update_l) {
@@ -177,11 +177,33 @@ pub const ColorInput = struct {
         return null;
     }
 
-    pub fn render(self: *ColorInput) !void {
+    pub fn updatePos(self: *ColorInput, size: u32, add: bool) void {
+        if (add) {
+            self.pos.x += size;
+            self.hex_input.pos.x += size;
+            self.r_input.pos.x += size;
+            self.g_input.pos.x += size;
+            self.b_input.pos.x += size;
+            self.h_input.pos.x += size;
+            self.s_input.pos.x += size;
+            self.l_input.pos.x += size;
+        } else {
+            self.pos.x -= size;
+            self.hex_input.pos.x -= size;
+            self.r_input.pos.x -= size;
+            self.g_input.pos.x -= size;
+            self.b_input.pos.x -= size;
+            self.h_input.pos.x -= size;
+            self.s_input.pos.x -= size;
+            self.l_input.pos.x -= size;
+        }
+    }
+
+    pub fn render(self: *ColorInput, offset: u.Vec2) !void {
         if (!self.update_flag) return;
         self.update_flag = false;
-        const offset_x: i32 = if (self.pos.x > 0) @intCast(self.pos.x) else -1;
-        const offset_y: i32 = if (self.pos.y > 0) @intCast(self.pos.y) else -1;
+        const offset_x: i32 = if (self.pos.x + offset.x > 0) @intCast(self.pos.x + offset.x) else -1;
+        const offset_y: i32 = if (self.pos.y + offset.y > 0) @intCast(self.pos.y + offset.y) else -1;
 
         try self.stdout.print("\x1b[H\x1b[{d}B\x1b[{d}C", .{ offset_y, offset_x });
         try self.stdout.print("\x1b[48;2;{d};{d};{d}m{s}\x1b[0m", .{
@@ -191,25 +213,25 @@ pub const ColorInput = struct {
             COLOR_BLOCK,
         });
 
-        try self.hex_input.render();
+        try self.hex_input.render(offset);
 
-        try self.r_input.render();
-        try self.g_input.render();
-        try self.b_input.render();
+        try self.r_input.render(offset);
+        try self.g_input.render(offset);
+        try self.b_input.render(offset);
 
-        try self.h_input.render();
-        try self.s_input.render();
-        try self.l_input.render();
+        try self.h_input.render(offset);
+        try self.s_input.render(offset);
+        try self.l_input.render(offset);
 
-        try self.hex_input.renderCursor();
+        try self.hex_input.renderCursor(offset);
 
-        try self.r_input.renderCursor();
-        try self.g_input.renderCursor();
-        try self.b_input.renderCursor();
+        try self.r_input.renderCursor(offset);
+        try self.g_input.renderCursor(offset);
+        try self.b_input.renderCursor(offset);
 
-        try self.h_input.renderCursor();
-        try self.s_input.renderCursor();
-        try self.l_input.renderCursor();
+        try self.h_input.renderCursor(offset);
+        try self.s_input.renderCursor(offset);
+        try self.l_input.renderCursor(offset);
     }
 };
 

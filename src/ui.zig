@@ -4,6 +4,7 @@ const shade_pick = @import("color/shade-picker.zig");
 const hue_pick = @import("color/hue-picker.zig");
 const commons = @import("commons.zig");
 const color_input = @import("color/input.zig");
+const u = @import("utils.zig");
 
 const MIN_WIDTH: u32 = @intFromFloat(commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH + 2 * commons.SPACING + color_input.WIDTH);
 const MIN_HEIGHT: u32 = @intFromFloat(commons.SIZE_GLOBAL / 2 + 5);
@@ -27,6 +28,8 @@ pub const Ui = struct {
     hue_picker: hue_pick.HuePicker,
     input: color_input.ColorInput,
 
+    pos: u.Vec2,
+
     win_too_small: bool,
 
     pub fn init(ctx: *term.TermContext, allocator: std.mem.Allocator) !Ui {
@@ -49,8 +52,8 @@ pub const Ui = struct {
             .exit_sig = false,
             .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 1, .y = 2 }),
             .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING, .y = 2 }),
-            // .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING + 30, .y = 2 }),
             .input = try color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH - 1, .y = 2 }, allocator),
+            .pos = .{ .x = 0, .y = 0 },
             .win_too_small = false,
         };
     }
@@ -60,15 +63,16 @@ pub const Ui = struct {
     }
 
     pub fn run(self: *Ui) !void {
-        self.hue_picker.render();
         const pid = std.os.linux.getpid();
         _ = std.os.linux.kill(pid, std.os.linux.SIG.WINCH);
+
+        self.hue_picker.render(.{ .x = 50, .y = 0 });
         while (!self.exit_sig) {
             try self.signal_manager();
             const in: term.Input = self.ctx.getInput() catch break;
-            try self.shade_picker.update(in);
-            self.hue_picker.update(in);
-            const input_color = try self.input.update(in);
+            try self.shade_picker.update(in, self.pos);
+            self.hue_picker.update(in, self.pos);
+            const input_color = try self.input.update(in, self.pos);
             switch (in) {
                 term.InputType.control => |control| {
                     const unwrapped_control = control orelse term.ControlKeys.None;
@@ -108,7 +112,7 @@ pub const Ui = struct {
                 try self.ctx.stdout.print("\x1b[H", .{}); // Move cursor to top left
 
                 try self.ctx.stdout.print("\x1b[K", .{});
-                try self.ctx.stdout.print("\x1b[1C", .{});
+                try self.ctx.stdout.print("\x1b[{d}C\x1b[{d}B", .{ self.pos.x + 1, self.pos.y });
                 try self.ctx.stdout.print("\x1B[0m\x1B[48;2;{};{};{}m{s}{s}\x1B[0m", .{
                     self.shade_picker.selected_color.r,
                     self.shade_picker.selected_color.g,
@@ -134,8 +138,8 @@ pub const Ui = struct {
                 self.shade_picker.select_update = false;
             }
 
-            self.shade_picker.calculateTableAndRender();
-            try self.input.render();
+            self.shade_picker.calculateTableAndRender(self.pos);
+            try self.input.render(self.pos);
         }
     }
 
@@ -155,9 +159,12 @@ pub const Ui = struct {
                 try self.ctx.stdout.print("Min size: {d} x {d}", .{ MIN_WIDTH, MIN_HEIGHT });
             } else {
                 self.win_too_small = false;
+                self.pos.x = if (self.ctx.win_size.cols > MIN_WIDTH) @intCast(self.ctx.win_size.cols / 2 - MIN_WIDTH / 2) else 0;
+                self.pos.y = if (self.ctx.win_size.rows > MIN_HEIGHT) @intCast(self.ctx.win_size.rows / 2 - MIN_HEIGHT / 2) else 0;
+
+                self.shade_picker.render_update = true;
+                self.hue_picker.render(self.pos);
             }
-            self.shade_picker.render_update = true;
-            self.hue_picker.render();
         }
     }
 };

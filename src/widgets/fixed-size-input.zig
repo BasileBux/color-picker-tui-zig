@@ -74,16 +74,16 @@ pub const FixedSizeInput = struct {
         self.update_flag = true;
     }
 
-    pub fn update(self: *FixedSizeInput, in: term.Input) bool {
+    pub fn update(self: *FixedSizeInput, in: term.Input, offset: u.Vec2) bool {
         switch (in) {
             .mouse => |mouse| {
                 const button = mouse.b & 0x3;
                 const is_drag = mouse.b & 32;
                 const modifiers = mouse.b & 12;
 
-                if (mouse.x >= self.pos.x and mouse.x < self.pos.x +
-                    self.input_buffer.len + self.title.len and
-                    mouse.y >= self.pos.y and mouse.y < self.pos.y + 1)
+                if (mouse.x >= self.pos.x + offset.x and mouse.x < self.pos.x +
+                    self.input_buffer.len + self.title.len + offset.x and
+                    mouse.y >= self.pos.y + offset.y and mouse.y < self.pos.y + offset.y + 1)
                 {
                     if (button == 0 and is_drag == 0 and modifiers == 0 and mouse.suffix == 'M') {
                         self.focused = true;
@@ -123,18 +123,18 @@ pub const FixedSizeInput = struct {
         return false;
     }
 
-    pub fn render(self: *FixedSizeInput) !void {
+    pub fn render(self: *FixedSizeInput, offset: u.Vec2) !void {
         if (!self.update_flag) return;
         self.update_flag = false;
-        try self.stdout.print("\x1b[{d};{d}H\x1b[K", .{ self.pos.y, self.pos.x });
+        try self.stdout.print("\x1b[{d};{d}H\x1b[K", .{ self.pos.y + offset.y, self.pos.x + offset.x });
 
         try self.stdout.print("{s}{s}\n", .{ self.title, self.input_buffer });
-        try self.stdout.print("\x1b[{d};{d}H", .{ self.pos.y, self.pos.x + self.title.len + self.input_buffer.len - self.input_len });
+        try self.stdout.print("\x1b[{d};{d}H", .{ self.pos.y + offset.y, self.pos.x + offset.x + self.title.len + self.input_buffer.len - self.input_len });
     }
 
-    pub fn renderCursor(self: FixedSizeInput) !void {
+    pub fn renderCursor(self: FixedSizeInput, offset: u.Vec2) !void {
         if (!self.focused) return;
         self.stdout.print("\x1B[?25h", .{}) catch {};
-        try self.stdout.print("\x1b[{d};{d}H", .{ self.pos.y, self.pos.x + self.title.len + self.input_len });
+        try self.stdout.print("\x1b[{d};{d}H", .{ self.pos.y + offset.y, self.pos.x + offset.x + self.title.len + self.input_len });
     }
 };

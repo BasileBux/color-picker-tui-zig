@@ -62,18 +62,18 @@ pub const HuePicker = struct {
         };
     }
 
-    pub fn update(self: *HuePicker, in: term.Input) void {
+    pub fn update(self: *HuePicker, in: term.Input, offset: u.Vec2) void {
         switch (in) {
             .mouse => |mouse| {
                 const button = mouse.b & 0x3;
                 const is_drag = mouse.b & 32;
                 const modifiers = mouse.b & 12;
 
-                if (mouse.x >= self.pos.x and mouse.x <= self.pos.x + I_WIDTH and
-                    mouse.y > self.pos.y and mouse.y <= self.pos.y + (I_HEIGHT / 2) and
+                if (mouse.x >= self.pos.x + offset.x and mouse.x <= self.pos.x + offset.x + I_WIDTH and
+                    mouse.y > self.pos.y + offset.y and mouse.y <= self.pos.y + offset.y + (I_HEIGHT / 2) and
                     button == 0 and is_drag >= 0 and modifiers == 0 and mouse.suffix == 'M')
                 {
-                    var y_idx = ((mouse.y - 1) - self.pos.y) * 2;
+                    var y_idx = ((mouse.y - 1) - (self.pos.y + offset.y)) * 2;
                     y_idx = if (y_idx >= I_HEIGHT - 2) I_HEIGHT - 1 else y_idx;
                     self.selected_hue = self.tint_picker[y_idx];
                     self.select_update = true;
@@ -83,8 +83,10 @@ pub const HuePicker = struct {
         }
     }
 
-    pub fn render(self: HuePicker) void {
+    pub fn render(self: HuePicker, offset: u.Vec2) void {
         var pos_r: u.Vec2 = self.pos;
+        pos_r.x += offset.x;
+        pos_r.y += offset.y;
         var i: usize = 0;
         while (i < HEIGHT) {
             for (0..WIDTH) |_| {
@@ -92,7 +94,7 @@ pub const HuePicker = struct {
                 pos_r.x += 1;
             }
             pos_r.y += 1;
-            pos_r.x = self.pos.x;
+            pos_r.x = self.pos.x + offset.x;
             i += 2;
         }
     }
