@@ -21,6 +21,6 @@ pub fn write_wayland_clipboard(allocator: std.mem.Allocator, text: []const u8) !
     try process.spawn(); // Start the wl-copy process
 
     const stdin = process.stdin.?;
-    _ = try stdin.write(text); // Write "Hello World" to clipboard
+    _ = try stdin.write(text); // Write to clipboard
     stdin.close(); // Close stdin (EOF)
 }

@@ -52,6 +52,7 @@ pub const ColorInput = struct {
     color: col.Color,
     hsl: col.Hsl,
     update_flag: bool,
+    allocator: std.mem.Allocator,
 
     hex_input: input_field.FixedSizeInput,
 
@@ -91,6 +92,7 @@ pub const ColorInput = struct {
 
             .update_flag = true,
             .color_update = false,
+            .allocator = allocator,
         };
     }
 
@@ -109,7 +111,7 @@ pub const ColorInput = struct {
         self.color = color;
         self.hsl = color.toHsl();
 
-        const buf = color.toHexString() catch unreachable;
+        const buf = color.toHexString(self.allocator) catch unreachable;
         self.hex_input.updateColor(buf);
 
         var buffer: [3]u8 = undefined;

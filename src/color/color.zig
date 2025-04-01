@@ -97,16 +97,12 @@ pub const Color = struct {
         };
     }
 
-    pub fn toRgb(self: *Color) ![]const u8 {
-        var buffer: [11]u8 = undefined; // xxx,xxx,xxx
-        const slice = try std.fmt.bufPrint(&buffer, "{d},{d},{d}", .{ self.r, self.g, self.b });
-        return slice;
+    pub fn toRgb(self: Color, allocator: std.mem.Allocator) ![]const u8 {
+        return std.fmt.allocPrint(allocator, "rgb({d},{d},{d})", .{ self.r, self.g, self.b });
     }
 
-    pub fn toRgba(self: *Color) ![]const u8 {
-        var buffer: [15]u8 = undefined; // xxx,xxx,xxx,xxx
-        const slice = try std.fmt.bufPrint(&buffer, "{d},{d},{d},{d}", .{ self.r, self.g, self.b, self.a });
-        return slice;
+    pub fn toRgba(self: Color, allocator: std.mem.Allocator) ![]const u8 {
+        return std.fmt.allocPrint(allocator, "rgba({d},{d},{d},{d})", .{ self.r, self.g, self.b, self.a });
     }
 
     pub fn toHex(self: Color) u24 {
@@ -117,15 +113,24 @@ pub const Color = struct {
         return hex;
     }
 
-    pub fn toHexString(self: Color) ![]const u8 {
-        var buffer: [6]u8 = undefined;
-        const slice = try std.fmt.bufPrint(&buffer, "{x:0>6}", .{self.toHex()});
-        return slice;
+    pub fn toHexString(self: Color, allocator: std.mem.Allocator) ![]const u8 {
+        const hex_value = self.toHex();
+        const result = try std.fmt.allocPrint(allocator, "{X:0>6}", .{hex_value});
+        return result;
     }
 
     pub fn toHexWithAlpha(self: *Color) u32 {
         const hex = self.toHex();
         return (hex << 8) | self.a;
+    }
+
+    pub fn toHslString(self: Color, allocator: std.mem.Allocator) ![]const u8 {
+        const hsl = self.toHsl();
+        return std.fmt.allocPrint(allocator, "hsl({d:.1},{d:.1},{d:.1})", .{
+            hsl.h,
+            hsl.s * 100.0,
+            hsl.l * 100.0,
+        });
     }
 
     pub fn toHsl(self: Color) Hsl {

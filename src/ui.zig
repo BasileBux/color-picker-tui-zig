@@ -6,6 +6,7 @@ const commons = @import("commons.zig");
 const color_input = @import("color/input.zig");
 const u = @import("utils.zig");
 const color = @import("color/color.zig");
+const cb = @import("clipboard.zig");
 
 const MIN_WIDTH: u32 = @intFromFloat(commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH + 2 * commons.SPACING + color_input.WIDTH);
 const MIN_HEIGHT: u32 = @intFromFloat(commons.SIZE_GLOBAL / 2 + 5);
@@ -28,6 +29,7 @@ pub const Ui = struct {
     shade_picker: shade_pick.ShadePicker,
     hue_picker: hue_pick.HuePicker,
     input: color_input.ColorInput,
+    allocator: std.mem.Allocator,
 
     pos: u.Vec2,
 
@@ -54,6 +56,7 @@ pub const Ui = struct {
             .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 1, .y = 2 }),
             .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING, .y = 2 }),
             .input = try color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH - 1, .y = 2 }, allocator),
+            .allocator = allocator,
             .pos = .{ .x = 0, .y = 0 },
             .win_too_small = false,
         };
@@ -87,7 +90,47 @@ pub const Ui = struct {
                     }
                 },
                 term.InputType.utf8 => |_| {},
-                term.InputType.mouse => |_| {},
+                term.InputType.mouse => |mouse| {
+                    const button = mouse.b & 0x3;
+                    const is_drag = mouse.b & 32;
+                    const modifiers = mouse.b & 12;
+
+                    const TOP_HEX_OFF: u32 = 3 * @as(u32, commons.WHITESPACE.len);
+                    const TOP_HEX_SIZE: u32 = 14;
+
+                    const TOP_RGB_OFF: u32 = TOP_HEX_OFF + TOP_HEX_SIZE + @as(u32, commons.WHITESPACE.len);
+                    var TOP_RGB_SIZE: u32 = 0;
+                    TOP_RGB_SIZE += if (self.shade_picker.color.r == 0) 1 else std.math.log10(self.shade_picker.color.r);
+                    TOP_RGB_SIZE += if (self.shade_picker.color.g == 0) 1 else std.math.log10(self.shade_picker.color.r);
+                    TOP_RGB_SIZE += if (self.shade_picker.color.b == 0) 1 else std.math.log10(self.shade_picker.color.r);
+                    TOP_RGB_SIZE += 10;
+
+                    const TOP_HSL_OFF: u32 = TOP_RGB_OFF + TOP_RGB_SIZE + @as(u32, commons.WHITESPACE.len);
+                    const hsl_color = self.shade_picker.selected_color.toHsl();
+                    var TOP_HSL_SIZE: u32 = 0;
+                    TOP_HSL_SIZE = if (hsl_color.h == 0) 1 else std.math.log10(@as(u32, @intFromFloat(hsl_color.h)));
+                    TOP_HSL_SIZE = if (hsl_color.s == 0) 1 else std.math.log10(@as(u32, @intFromFloat(hsl_color.s * 100)));
+                    TOP_HSL_SIZE = if (hsl_color.l == 0) 1 else std.math.log10(@as(u32, @intFromFloat(hsl_color.l * 100)));
+                    TOP_HSL_SIZE += 23;
+
+                    if (mouse.x >= self.pos.x + TOP_HEX_OFF and mouse.x < self.pos.x + TOP_HEX_OFF + TOP_HEX_SIZE and
+                        mouse.y >= self.pos.y + 1 and mouse.y < self.pos.y + 2 and button == 0 and is_drag == 0 and modifiers == 0)
+                    {
+                        try cb.write_wayland_clipboard(self.allocator, try self.shade_picker.color.toHexString(self.allocator));
+                    }
+
+                    if (mouse.x >= self.pos.x + TOP_RGB_OFF and mouse.x < self.pos.x + TOP_RGB_OFF + TOP_RGB_SIZE and
+                        mouse.y >= self.pos.y + 1 and mouse.y < self.pos.y + 2 and button == 0 and is_drag == 0 and modifiers == 0)
+                    {
+                        try cb.write_wayland_clipboard(self.allocator, try self.shade_picker.color.toRgb(self.allocator));
+                    }
+
+                    if (mouse.x >= self.pos.x + TOP_HSL_OFF and mouse.x < self.pos.x + TOP_HSL_OFF + TOP_HSL_SIZE and
+                        mouse.y >= self.pos.y + 1 and mouse.y < self.pos.y + 2 and button == 0 and is_drag == 0 and modifiers == 0)
+                    {
+                        try cb.write_wayland_clipboard(self.allocator, try self.shade_picker.color.toHslString(self.allocator));
+                    }
+                },
             }
             if (self.win_too_small) continue;
 
@@ -147,7 +190,6 @@ pub const Ui = struct {
                 self.input.updateColor(self.shade_picker.selected_color);
                 self.shade_picker.select_update = false;
             }
-
             self.shade_picker.calculateTableAndRender(fixed_color, self.pos);
             try self.input.render(self.pos, self.ctx.background_color);
         }

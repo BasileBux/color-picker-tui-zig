@@ -1,6 +1,7 @@
 const std = @import("std");
 const u = @import("../utils.zig");
 const term = @import("../term.zig");
+const cp = @import("../clipboard.zig");
 
 pub const FixedSizeInput = struct {
     update_flag: bool,
@@ -99,6 +100,35 @@ pub const FixedSizeInput = struct {
                 }
             },
             .utf8 => |char| {
+                if (self.focused and (char[0] == 0x7f or char[0] == 0x08)) { // backspace
+                    self.update_flag = true;
+                    if (self.input_len == 0) return false;
+                    self.input_len -= 1;
+                    self.input_buffer[self.input_len] = ' ';
+                }
+                if (self.focused and char[0] == 'p') { // paste
+                    self.update_flag = true;
+                    if (self.input_len == 0) {
+                        for (0..self.input_buffer.len) |i| {
+                            self.input_buffer[i] = ' ';
+                        }
+                    }
+                    const paste = cp.read_wayland_clipboard(self.allocator) catch return false;
+                    for (self.input_len..self.input_buffer.len) |i| {
+                        if (i > paste.len) break;
+                        const current = [_]u8{ paste[i], 0, 0, 0 };
+                        if (!self.validateConstraint(current)) return false;
+                        self.input_buffer[i] = current[0];
+                        self.input_len += 1;
+                    }
+                    self.update_flag = true;
+                    if (self.input_len == self.input_buffer.len) {
+                        self.focused = false;
+                        self.stdout.print("\x1B[?25l", .{}) catch {};
+                        return true;
+                    }
+                    self.allocator.free(paste);
+                }
                 if (self.focused and char[0] == '\n') {
                     self.focused = false;
                     self.stdout.print("\x1B[?25l", .{}) catch {};
