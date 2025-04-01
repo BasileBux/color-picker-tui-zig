@@ -89,7 +89,9 @@ pub const Ui = struct {
                         },
                     }
                 },
-                term.InputType.utf8 => |_| {},
+                term.InputType.utf8 => |char| {
+                    if (char[0] == 'q') self.exit_sig = true;
+                },
                 term.InputType.mouse => |mouse| {
                     const button = mouse.b & 0x3;
                     const is_drag = mouse.b & 32;
