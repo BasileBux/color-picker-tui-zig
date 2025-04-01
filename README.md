@@ -5,7 +5,7 @@ pick colors and translate them from / to different formats. It is linux only but
 a macos version could happen as it really similar to linux. It is highly
 inspired by [this](https://htmlcolorcodes.com/).
 
-<https://github.com/user-attachments/assets/273a5154-0e25-4513-8a61-d399d12dfabe>
+<https://github.com/user-attachments/assets/063aa337-312d-4ef6-986d-950d8a76b35e>
 
 The TUI draws a big square for color selection. This square could not appear
 completely square depending on your font. For better looking squares, I
