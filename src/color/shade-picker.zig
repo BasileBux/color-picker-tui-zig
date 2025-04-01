@@ -58,7 +58,7 @@ pub const ShadePicker = struct {
         }
     }
 
-    pub fn calculateTableAndRender(self: *ShadePicker, offset: u.Vec2) void {
+    pub fn calculateTableAndRender(self: *ShadePicker, fixed_color: bool, offset: u.Vec2) void {
         if (!self.render_update) return;
         var buffer = std.ArrayList(u8).init(self.allocator);
         defer buffer.deinit();
@@ -129,7 +129,7 @@ pub const ShadePicker = struct {
         self.stdout.writeAll(buffer.items) catch {};
 
         self.select_update = true;
-        self.selected_color = self.color_table[self.selected_pos.y][self.selected_pos.x];
+        if (!fixed_color) self.selected_color = self.color_table[self.selected_pos.y][self.selected_pos.x];
         self.render_update = false;
     }
 

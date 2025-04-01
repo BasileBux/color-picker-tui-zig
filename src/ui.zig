@@ -5,6 +5,7 @@ const hue_pick = @import("color/hue-picker.zig");
 const commons = @import("commons.zig");
 const color_input = @import("color/input.zig");
 const u = @import("utils.zig");
+const color = @import("color/color.zig");
 
 const MIN_WIDTH: u32 = @intFromFloat(commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH + 2 * commons.SPACING + color_input.WIDTH);
 const MIN_HEIGHT: u32 = @intFromFloat(commons.SIZE_GLOBAL / 2 + 5);
@@ -90,8 +91,14 @@ pub const Ui = struct {
             }
             if (self.win_too_small) continue;
 
+            var fixed_color = false;
             if (input_color) |col| {
                 self.shade_picker.selected_color = col;
+                fixed_color = true;
+
+                self.hue_picker.select_update = true;
+                self.hue_picker.selected_hue = try color.Color.fromHsl(col.toHsl().h, 1, 0.5);
+
                 self.shade_picker.select_update = true;
                 self.input.color = col;
                 self.input.updateColor(col);
@@ -141,7 +148,7 @@ pub const Ui = struct {
                 self.shade_picker.select_update = false;
             }
 
-            self.shade_picker.calculateTableAndRender(self.pos);
+            self.shade_picker.calculateTableAndRender(fixed_color, self.pos);
             try self.input.render(self.pos, self.ctx.background_color);
         }
     }
