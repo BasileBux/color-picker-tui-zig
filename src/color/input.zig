@@ -160,7 +160,7 @@ pub const ColorInput = struct {
             self.update_flag = true;
             self.color_update = true;
             return try col.Color.fromHsl(
-                @floatFromInt(self.h_input.getNumber(100)),
+                @floatFromInt(self.h_input.getNumber(360)),
                 s_value / 100.0,
                 l_value / 100.0,
             );

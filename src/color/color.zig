@@ -54,7 +54,7 @@ pub const Color = struct {
     }
 
     pub fn fromHsl(h: f32, s: f32, l: f32) !Color {
-        if (h > 360.0 or s > 1 or h > 1) return error.ColorOutOfRange;
+        if (h > 360.0 or s > 1 or l > 1) return error.ColorOutOfRange;
         const c = (1 - @abs(2 * l - 1)) * s;
         const x = c * (1 - @abs(@mod(h / 60, 2) - 1));
         const m = l - c / 2;
