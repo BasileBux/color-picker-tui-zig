@@ -5,8 +5,8 @@ const hue_pick = @import("color/hue-picker.zig");
 const commons = @import("commons.zig");
 const color_input = @import("color/input.zig");
 
-const MIN_WIDTH: u32 = @intFromFloat(commons.SIZE_GLOBAL);
-const MIN_HEIGHT: u32 = @intFromFloat(commons.SIZE_GLOBAL + hue_pick.WIDTH);
+const MIN_WIDTH: u32 = @intFromFloat(commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH + 2 * commons.SPACING + color_input.WIDTH);
+const MIN_HEIGHT: u32 = @intFromFloat(commons.SIZE_GLOBAL / 2 + 5);
 
 var window_resized = std.atomic.Value(bool).init(false);
 fn handleSigwinch(sig: c_int) callconv(.C) void {
@@ -49,7 +49,8 @@ pub const Ui = struct {
             .exit_sig = false,
             .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 1, .y = 2 }),
             .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING, .y = 2 }),
-            .input = try color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH, .y = 2 }, allocator),
+            // .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING + 30, .y = 2 }),
+            .input = try color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH - 1, .y = 2 }, allocator),
             .win_too_small = false,
         };
     }
@@ -60,9 +61,10 @@ pub const Ui = struct {
 
     pub fn run(self: *Ui) !void {
         self.hue_picker.render();
+        const pid = std.os.linux.getpid();
+        _ = std.os.linux.kill(pid, std.os.linux.SIG.WINCH);
         while (!self.exit_sig) {
             try self.signal_manager();
-            if (self.win_too_small) continue;
             const in: term.Input = self.ctx.getInput() catch break;
             try self.shade_picker.update(in);
             self.hue_picker.update(in);
@@ -82,6 +84,7 @@ pub const Ui = struct {
                 term.InputType.utf8 => |_| {},
                 term.InputType.mouse => |_| {},
             }
+            if (self.win_too_small) continue;
 
             if (input_color) |col| {
                 self.shade_picker.selected_color = col;
@@ -149,6 +152,7 @@ pub const Ui = struct {
             if (self.ctx.win_size.cols < MIN_WIDTH or self.ctx.win_size.rows < MIN_HEIGHT) {
                 self.win_too_small = true;
                 try self.ctx.stdout.print("Window too small", .{});
+                try self.ctx.stdout.print("Min size: {d} x {d}", .{ MIN_WIDTH, MIN_HEIGHT });
             } else {
                 self.win_too_small = false;
             }

@@ -6,7 +6,7 @@ const w = @import("../widgets/widgets.zig");
 const term = @import("../term.zig");
 const input_field = @import("../widgets/fixed-size-input.zig");
 
-const WIDTH: u8 = 16;
+pub const WIDTH: u8 = 16;
 const HEIGHT: u8 = c.SIZE_GLOBAL / 2 - 1;
 const COLOR_BLOCK_HEIGHT: u8 = 4;
 const NEW_LINE_SIZE = 2 + // \x1b
