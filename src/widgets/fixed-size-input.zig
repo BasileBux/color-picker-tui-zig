@@ -93,6 +93,7 @@ pub const FixedSizeInput = struct {
                 } else {
                     if (button == 0 and is_drag >= 0 and modifiers == 0 and mouse.suffix == 'M') {
                         self.focused = false;
+                        self.stdout.print("\x1B[?25l", .{}) catch {};
                         self.update_flag = true;
                     }
                 }
@@ -100,6 +101,7 @@ pub const FixedSizeInput = struct {
             .utf8 => |char| {
                 if (self.focused and char[0] == '\n') {
                     self.focused = false;
+                    self.stdout.print("\x1B[?25l", .{}) catch {};
                     self.update_flag = true;
                     return true;
                 }
@@ -112,7 +114,7 @@ pub const FixedSizeInput = struct {
                     }
                 }
                 self.update_flag = true;
-                // index 0 because we only accept ascii chars (alnums)
+                // index 0 because we only accept ascii chars
                 self.input_buffer[self.input_len] = char[0];
                 self.input_len += 1;
             },
@@ -126,15 +128,13 @@ pub const FixedSizeInput = struct {
         self.update_flag = false;
         try self.stdout.print("\x1b[{d};{d}H\x1b[K", .{ self.pos.y, self.pos.x });
 
-        // Show cursor and place at right position
-        if (self.focused) {
-            try self.stdout.print("\x1b[31m", .{});
-        } else {
-            try self.stdout.print("\x1b[0m", .{});
-        }
-
         try self.stdout.print("{s}{s}\n", .{ self.title, self.input_buffer });
+        try self.stdout.print("\x1b[{d};{d}H", .{ self.pos.y, self.pos.x + self.title.len + self.input_buffer.len - self.input_len });
+    }
 
-        try self.stdout.print("\x1b[0m", .{});
+    pub fn renderCursor(self: FixedSizeInput) !void {
+        if (!self.focused) return;
+        self.stdout.print("\x1B[?25h", .{}) catch {};
+        try self.stdout.print("\x1b[{d};{d}H", .{ self.pos.y, self.pos.x + self.title.len + self.input_len });
     }
 };

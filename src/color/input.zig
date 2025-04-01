@@ -200,6 +200,16 @@ pub const ColorInput = struct {
         try self.h_input.render();
         try self.s_input.render();
         try self.l_input.render();
+
+        try self.hex_input.renderCursor();
+
+        try self.r_input.renderCursor();
+        try self.g_input.renderCursor();
+        try self.b_input.renderCursor();
+
+        try self.h_input.renderCursor();
+        try self.s_input.renderCursor();
+        try self.l_input.renderCursor();
     }
 };
 

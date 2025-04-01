@@ -131,9 +131,8 @@ pub const Ui = struct {
                 self.shade_picker.select_update = false;
             }
 
-            try self.input.render();
-
             self.shade_picker.calculateTableAndRender();
+            try self.input.render();
         }
     }
 
