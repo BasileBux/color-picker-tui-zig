@@ -54,7 +54,16 @@ pub const ColorInput = struct {
     update_flag: bool,
 
     hex_input: input_field.FixedSizeInput,
+
     r_input: input_field.FixedSizeInput,
+    g_input: input_field.FixedSizeInput,
+    b_input: input_field.FixedSizeInput,
+
+    h_input: input_field.FixedSizeInput,
+    s_input: input_field.FixedSizeInput,
+    l_input: input_field.FixedSizeInput,
+
+    color_update: bool,
 
     const focus = enum {
         hex,
@@ -63,20 +72,36 @@ pub const ColorInput = struct {
         none,
     };
 
-    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2) ColorInput {
-        var buffer = [_]u8{ '0', '0', '0' };
-        var hex_buf = [_]u8{ '0', '0', '0', '0', '0', '0' };
-
+    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2, allocator: std.mem.Allocator) !ColorInput {
         return .{
             .stdout = stdout,
             .pos = pos,
             .hex = 0,
             .color = col.Color.init(),
             .hsl = col.Hsl.init(),
-            .hex_input = input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 1 }, &hex_buf, "# ", .hex),
-            .r_input = input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 3 }, &buffer, "R ", .numbers),
+            .hex_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 1 }, 6, "# ", .hex, allocator),
+
+            .r_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 3 }, 3, "R ", .numbers, allocator),
+            .g_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 4 }, 3, "G ", .numbers, allocator),
+            .b_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 5 }, 3, "B ", .numbers, allocator),
+
+            .h_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 7 }, 3, "H ", .numbers, allocator),
+            .s_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 8 }, 3, "S ", .numbers, allocator),
+            .l_input = try input_field.FixedSizeInput.init(stdout, .{ .x = pos.x + 1, .y = pos.y + COLOR_BLOCK_HEIGHT + 9 }, 3, "L ", .numbers, allocator),
+
             .update_flag = true,
+            .color_update = false,
         };
+    }
+
+    pub fn deinit(self: *ColorInput) void {
+        self.hex_input.deinit();
+        self.r_input.deinit();
+        self.g_input.deinit();
+        self.b_input.deinit();
+        self.h_input.deinit();
+        self.s_input.deinit();
+        self.l_input.deinit();
     }
 
     pub fn updateColor(self: *ColorInput, color: col.Color) void {
@@ -90,18 +115,71 @@ pub const ColorInput = struct {
         var buffer: [3]u8 = undefined;
         pad_number(color.r, 3, &buffer);
         self.r_input.updateColor(&buffer);
+        pad_number(color.g, 3, &buffer);
+        self.g_input.updateColor(&buffer);
+        pad_number(color.b, 3, &buffer);
+        self.b_input.updateColor(&buffer);
+
+        pad_number(@intFromFloat(color.toHsl().h), 3, &buffer);
+        self.h_input.updateColor(&buffer);
+        pad_number(@intFromFloat(color.toHsl().s * 100), 3, &buffer);
+        self.s_input.updateColor(&buffer);
+        pad_number(@intFromFloat(color.toHsl().l * 100), 3, &buffer);
+        self.l_input.updateColor(&buffer);
     }
 
-    pub fn update(self: *ColorInput, in: term.Input) !void {
-        self.hex_input.update(in);
-        self.r_input.update(in);
-        if (self.hex_input.update_flag or self.r_input.update_flag) {
+    pub fn update(self: *ColorInput, in: term.Input) !?col.Color {
+        var color_update = false;
+
+        color_update = self.hex_input.update(in);
+        if (color_update) {
+            self.update_flag = true;
+            self.color_update = true;
+            return col.Color.fromHex(@intCast(self.hex_input.getNumber(0)));
+        }
+
+        const color_update_r = self.r_input.update(in);
+        const color_update_g = self.g_input.update(in);
+        const color_update_b = self.b_input.update(in);
+        if (color_update_r or color_update_g or color_update_b) {
+            self.update_flag = true;
+            self.color_update = true;
+            return col.Color.fromRgb(
+                @intCast(self.r_input.getNumber(255)),
+                @intCast(self.g_input.getNumber(255)),
+                @intCast(self.b_input.getNumber(255)),
+            );
+        }
+
+        const color_update_h = self.h_input.update(in);
+        const color_update_s = self.s_input.update(in);
+        const color_update_l = self.l_input.update(in);
+        const s_value: f32 = @floatFromInt(self.s_input.getNumber(100));
+        const l_value: f32 = @floatFromInt(self.l_input.getNumber(100));
+        if (color_update_h or color_update_s or color_update_l) {
+            self.update_flag = true;
+            self.color_update = true;
+            return try col.Color.fromHsl(
+                @floatFromInt(self.h_input.getNumber(100)),
+                s_value / 100.0,
+                l_value / 100.0,
+            );
+        }
+
+        if (self.hex_input.update_flag or self.r_input.update_flag or
+            self.g_input.update_flag or self.b_input.update_flag or
+            self.h_input.update_flag or self.s_input.update_flag or
+            self.l_input.update_flag)
+        {
             self.update_flag = true;
         }
+
+        return null;
     }
 
     pub fn render(self: *ColorInput) !void {
         if (!self.update_flag) return;
+        self.update_flag = false;
         const offset_x: i32 = if (self.pos.x > 0) @intCast(self.pos.x) else -1;
         const offset_y: i32 = if (self.pos.y > 0) @intCast(self.pos.y) else -1;
 
@@ -114,11 +192,19 @@ pub const ColorInput = struct {
         });
 
         try self.hex_input.render();
+
         try self.r_input.render();
+        try self.g_input.render();
+        try self.b_input.render();
+
+        try self.h_input.render();
+        try self.s_input.render();
+        try self.l_input.render();
     }
 };
 
-pub fn pad_number(number: u8, size: usize, buffer: []u8) void {
+pub fn pad_number(number: u16, size: usize, buffer: []u8) void {
+    if (number >= 1000) return;
     var temp_buf: [3]u8 = undefined; // Large enough for any u8
     const numStr = std.fmt.bufPrint(&temp_buf, "{d}", .{number}) catch unreachable;
 

@@ -13,6 +13,7 @@ pub fn main() !void {
         .verbose_log = false,
     }){};
     const gpa_allocator = gpa.allocator();
+    defer _ = gpa.deinit();
 
     var ctx = try term.TermContext.init();
     defer ctx.deinit();

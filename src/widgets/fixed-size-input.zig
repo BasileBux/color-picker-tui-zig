@@ -12,23 +12,30 @@ pub const FixedSizeInput = struct {
     title: []const u8,
     focused: bool,
 
+    allocator: std.mem.Allocator,
+
     pub const Constraint = enum {
         hex,
         numbers,
         none,
     };
 
-    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2, buff: []const u8, title: []const u8, constraint: Constraint) FixedSizeInput {
+    pub fn init(stdout: std.fs.File.Writer, pos: u.Vec2, buff_size: usize, title: []const u8, constraint: Constraint, allocator: std.mem.Allocator) !FixedSizeInput {
         return .{
             .update_flag = true,
             .stdout = stdout,
             .pos = pos,
-            .input_buffer = @constCast(buff),
-            .input_len = buff.len,
+            .input_buffer = try allocator.alloc(u8, buff_size),
+            .input_len = buff_size - 1,
             .constraint = constraint,
             .title = title,
             .focused = false,
+            .allocator = allocator,
         };
+    }
+
+    pub fn deinit(self: *FixedSizeInput) void {
+        self.allocator.free(self.input_buffer);
     }
 
     fn validateConstraint(self: FixedSizeInput, in: [4]u8) bool {
@@ -48,6 +55,16 @@ pub const FixedSizeInput = struct {
         }
     }
 
+    pub fn getNumber(self: *FixedSizeInput, max: u32) u32 {
+        if (self.constraint == .hex) {
+            return u.hex_string_to_int(self.input_buffer);
+        } else {
+            const num = u.string_to_int(self.input_buffer);
+            if (num > max) return max;
+            return num;
+        }
+    }
+
     pub fn updateColor(self: *FixedSizeInput, buf: []const u8) void {
         self.input_len = 0;
         for (buf) |char| {
@@ -57,21 +74,8 @@ pub const FixedSizeInput = struct {
         self.update_flag = true;
     }
 
-    pub fn update(self: *FixedSizeInput, in: term.Input) void {
+    pub fn update(self: *FixedSizeInput, in: term.Input) bool {
         switch (in) {
-            .utf8 => |input| {
-                if (self.input_len >= self.input_buffer.len) {
-                    self.input_len = 0;
-                    self.update_flag = true;
-                    return;
-                }
-                if (self.validateConstraint(input)) {
-                    self.update_flag = true;
-                    const char = input[0];
-                    self.input_buffer[self.input_len] = char;
-                    self.input_len += 1;
-                }
-            },
             .mouse => |mouse| {
                 const button = mouse.b & 0x3;
                 const is_drag = mouse.b & 32;
@@ -83,6 +87,7 @@ pub const FixedSizeInput = struct {
                 {
                     if (button == 0 and is_drag == 0 and modifiers == 0 and mouse.suffix == 'M') {
                         self.focused = true;
+                        self.input_len = 0;
                         self.update_flag = true;
                     }
                 } else {
@@ -92,8 +97,28 @@ pub const FixedSizeInput = struct {
                     }
                 }
             },
-            else => return,
+            .utf8 => |char| {
+                if (self.focused and char[0] == '\n') {
+                    self.focused = false;
+                    self.update_flag = true;
+                    return true;
+                }
+                if (!self.focused or !self.validateConstraint(char) or
+                    self.input_len == self.input_buffer.len) return false;
+
+                if (self.input_len == 0) {
+                    for (0..self.input_buffer.len) |i| {
+                        self.input_buffer[i] = ' ';
+                    }
+                }
+                self.update_flag = true;
+                // index 0 because we only accept ascii chars (alnums)
+                self.input_buffer[self.input_len] = char[0];
+                self.input_len += 1;
+            },
+            else => return false,
         }
+        return false;
     }
 
     pub fn render(self: *FixedSizeInput) !void {
@@ -101,6 +126,7 @@ pub const FixedSizeInput = struct {
         self.update_flag = false;
         try self.stdout.print("\x1b[{d};{d}H\x1b[K", .{ self.pos.y, self.pos.x });
 
+        // Show cursor and place at right position
         if (self.focused) {
             try self.stdout.print("\x1b[31m", .{});
         } else {

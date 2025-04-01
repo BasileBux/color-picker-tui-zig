@@ -49,9 +49,13 @@ pub const Ui = struct {
             .exit_sig = false,
             .shade_picker = try shade_pick.ShadePicker.init(ctx.stdout, allocator, .{ .x = 1, .y = 2 }),
             .hue_picker = hue_pick.HuePicker.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + commons.SPACING, .y = 2 }),
-            .input = color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH, .y = 2 }),
+            .input = try color_input.ColorInput.init(ctx.stdout, .{ .x = commons.SIZE_GLOBAL + 2 * commons.SPACING + hue_pick.WIDTH, .y = 2 }, allocator),
             .win_too_small = false,
         };
+    }
+
+    pub fn deinit(self: *Ui) void {
+        self.input.deinit();
     }
 
     pub fn run(self: *Ui) !void {
@@ -62,7 +66,7 @@ pub const Ui = struct {
             const in: term.Input = self.ctx.getInput() catch break;
             try self.shade_picker.update(in);
             self.hue_picker.update(in);
-            try self.input.update(in);
+            const input_color = try self.input.update(in);
             switch (in) {
                 term.InputType.control => |control| {
                     const unwrapped_control = control orelse term.ControlKeys.None;
@@ -79,10 +83,18 @@ pub const Ui = struct {
                 term.InputType.mouse => |_| {},
             }
 
+            if (input_color) |col| {
+                self.shade_picker.selected_color = col;
+                self.shade_picker.select_update = true;
+                self.input.color = col;
+                self.input.updateColor(col);
+            }
+
             if (self.hue_picker.select_update) {
                 self.hue_picker.select_update = false;
                 self.shade_picker.color = self.hue_picker.selected_hue;
                 self.shade_picker.render_update = true;
+                self.input.updateColor(self.shade_picker.color);
             }
 
             if (self.shade_picker.select_update) {
@@ -118,6 +130,7 @@ pub const Ui = struct {
                 self.input.updateColor(self.shade_picker.selected_color);
                 self.shade_picker.select_update = false;
             }
+
             try self.input.render();
 
             self.shade_picker.calculateTableAndRender();
